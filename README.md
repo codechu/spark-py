@@ -13,9 +13,20 @@
 
 # codechu-spark
 
-Stdlib-only text visualizations — Unicode sparklines, labeled mini
-bar charts, 1D heatmaps — extracted from the [Disk Cleaner](https://github.com/codechu/disk-cleaner)
-toolchain. No external dependencies. Python 3.10+.
+Stdlib-only text visualizations: single-row charts that fit a log
+line, a status field, or a dashboard cell. No GUI, no external
+deps — just Unicode block elements arranged for one-glance
+readability.
+
+```text
+load:  ▁▃▄▆█▇▅▃▂▁                            sparkline
+disk:  ████▆▆▅▅▄▃▂▁                          (auto-downsamples)
+io:    ░░▒▒▓▓██▓▓▒░                          heatmap
+
+python  ████████████████████  42             bar_chart
+rust    ████████              17
+go      ███                    8
+```
 
 ## Install
 
@@ -23,105 +34,64 @@ toolchain. No external dependencies. Python 3.10+.
 pip install codechu-spark
 ```
 
-## API
+Python 3.10+. Zero third-party dependencies.
 
-### `sparkline(values, *, width=None, chars="▁▂▃▄▅▆▇█")`
-
-```python
-from codechu_spark import sparkline
-
-sparkline([1, 3, 7, 2, 5])                # → '▁▃█▂▅'
-sparkline(list(range(100)), width=10)     # downsampled by averaging
-sparkline([1, 2, 3], chars=".-=#")        # custom glyphs
-```
-
-- `width=None` → one glyph per value
-- `width<len(values)` → downsample by averaging consecutive buckets
-- `width>len(values)` → render at `len(values)` (no upsampling)
-- Empty list → `''`; all-equal → first glyph repeated
-
-### `bar_chart(items, *, width=40, char="█")`
+## Quick example
 
 ```python
-from codechu_spark import bar_chart
+from codechu_spark import sparkline, bar_chart, heatmap
 
-print(bar_chart([
-    ("python", 42),
-    ("rust",   17),
-    ("go",     8),
-], width=20))
-# python  ████████████████████  42
-# rust    ████████              17
-# go      ███                    8
+print(sparkline([1, 3, 7, 2, 5]))             # ▁▃█▂▅
+print(sparkline(list(range(100)), width=10))  # downsampled by averaging
+
+print(bar_chart([("python", 42), ("rust", 17), ("go", 8)], width=20))
+
+print(heatmap([0, 1, 2, 3, 4]))               # ' ░▒▓█'
 ```
 
-Bars are scaled to the maximum value. Labels are left-aligned to the
-longest label. Negative values clip to a zero-width bar.
+## What you get
 
-### `heatmap(values, *, chars=" ░▒▓█")`
+- **`sparkline`** — one-row Unicode chart. Auto-downsamples by
+  averaging when the data is wider than the target.
+- **`multi_sparkline`** — multiple series stacked on adjacent lines.
+- **`sparkline_with_axis`** — sparkline with min/max axis labels.
+- **`bar_chart`** — multi-line labeled horizontal bars; scaled to
+  the maximum value, labels left-aligned.
+- **`heatmap`** — denser-than-sparkline single-row intensity readout.
 
-```python
-from codechu_spark import heatmap
+All functions accept a custom `chars=` ramp (low → high) so you can
+swap in ASCII fallbacks, color characters, or your own glyph set.
 
-heatmap([0, 1, 2, 3, 4])     # → ' ░▒▓█'
-heatmap([0, 5, 10], chars=".oO")
-```
+## Read more
 
-A denser-than-sparkline row. Useful for per-bucket load,
-hour-of-day utilization, or any single-row intensity readout.
-
-## Documentation
-
-- [API reference](docs/API.md) — every public symbol with signatures,
-  examples, and edge-case tables.
+- [API reference](docs/API.md) — every public symbol with signatures
+  and edge-case tables.
 - [Recipes](docs/RECIPES.md) — sparkline windows, top-N bars, 1-D
   heatmaps, custom ramps, terminal-width downsampling.
 - [Migration guide](docs/MIGRATION.md) — 0.1 → 0.2 (internal refactor,
   no API changes).
+- [Changelog](CHANGELOG.md)
 
-## Design
-
-- **Pure stdlib.** Zero third-party dependencies.
-- **Single-row primitives.** Each function returns a string (with
-  embedded newlines for `bar_chart`); no terminal control codes, no
-  cursor movement — that's a separate concern.
-- **Custom glyphs welcome.** Pass any `chars` string ordered low → high.
-
-## Tests
-
-```bash
-pip install -e ".[dev]"
-pytest -q
-```
-
-Coverage gate: ≥90 %.
-
-## Codechu family
-
-Companion libraries from the Codechu Python ecosystem:
+## Family
 
 | Library | Purpose |
 |---------|---------|
-| [codechu-fmt](https://pypi.org/project/codechu-fmt/) | Human-readable formatting — sizes, durations, rates, percent |
-| [codechu-meter](https://pypi.org/project/codechu-meter/) | Timing primitives — Stopwatch, ETA, percentile, histogram |
-| [codechu-cli](https://pypi.org/project/codechu-cli/) | CLI primitives — colors, progress, spinners, prompts, table |
-| [codechu-events](https://pypi.org/project/codechu-events/) | Thread-safe multi-channel pub/sub bus with replay |
-| [codechu-xdg](https://pypi.org/project/codechu-xdg/) | XDG Base Directory helpers, vendor-namespaced |
-| [codechu-treeviz](https://pypi.org/project/codechu-treeviz/) | Tree visualization — treemap, sunburst, icicle, flame |
-| [codechu-fs](https://pypi.org/project/codechu-fs/) | Filesystem primitives — atomic write, XDG trash, safe walk |
-| [codechu-term](https://pypi.org/project/codechu-term/) | Terminal capability detection, alt buffer, raw mode |
-| [codechu-color](https://pypi.org/project/codechu-color/) | Color palettes, WCAG contrast, color-blind variants |
-| [codechu-treedata](https://pypi.org/project/codechu-treedata/) | N-ary tree data structures and algorithms |
-| [codechu-log](https://pypi.org/project/codechu-log/) | Structured logging — context, JSON, rotation, redaction |
-| [codechu-i18n](https://pypi.org/project/codechu-i18n/) | Internationalization — locale, plural rules, RTL |
-| [codechu-ipc](https://pypi.org/project/codechu-ipc/) | Local IPC — Unix socket, FIFO, JSON-line protocol |
-| [codechu-config](https://pypi.org/project/codechu-config/) | Schema-driven config — atomic save, migrations |
+| [codechu-cli](https://pypi.org/project/codechu-cli/) | CLI primitives — colors, progress, spinners, prompts |
+| [codechu-fmt](https://pypi.org/project/codechu-fmt/) | Human-readable sizes, durations, rates |
+| [codechu-meter](https://pypi.org/project/codechu-meter/) | Timing — stopwatch, ETA, rate, histogram |
+| [codechu-term](https://pypi.org/project/codechu-term/) | Terminal capabilities, alt buffer, raw mode |
+| [codechu-treeviz](https://pypi.org/project/codechu-treeviz/) | Treemap + sunburst layouts |
+
+Full ecosystem: [github.com/codechu](https://github.com/codechu).
 
 ## Credits
 
-- Unicode block elements per The Unicode Standard
-- Conceptual lineage from Edward Tufte's "sparkline" notion (*Beautiful Evidence*, 2006)
+- Unicode block elements per The Unicode Standard.
+- Conceptual lineage from Edward Tufte's "sparkline" notion
+  (*Beautiful Evidence*, 2006).
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+Part of [Codechu](https://github.com/codechu).
