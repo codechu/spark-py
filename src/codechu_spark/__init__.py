@@ -13,7 +13,7 @@ from .bars import bar_chart
 from .heatmap import heatmap
 from .sparkline import sparkline
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "__version__",

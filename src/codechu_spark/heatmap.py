@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from ._helpers import _glyph_ramp
+
 __all__ = ["heatmap"]
 
 _DEFAULT_CHARS = " ░▒▓█"
@@ -23,16 +25,4 @@ def heatmap(values: list[float], *, chars: str = _DEFAULT_CHARS) -> str:
     if not chars:
         raise ValueError("chars must be non-empty")
 
-    lo = min(values)
-    hi = max(values)
-    span = hi - lo
-    if span == 0:
-        return chars[0] * len(values)
-
-    n = len(chars)
-    out: list[str] = []
-    for v in values:
-        idx = int(round((v - lo) / span * (n - 1)))
-        idx = max(0, min(n - 1, idx))
-        out.append(chars[idx])
-    return "".join(out)
+    return _glyph_ramp(list(values), chars)

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from ._helpers import _glyph_ramp
+
 __all__ = ["sparkline"]
 
 _DEFAULT_CHARS = "▁▂▃▄▅▆▇█"
@@ -34,19 +36,7 @@ def sparkline(
     if width is not None and width > 0 and len(data) > width:
         data = _downsample(data, width)
 
-    lo = min(data)
-    hi = max(data)
-    span = hi - lo
-    if span == 0:
-        return chars[0] * len(data)
-
-    n_bars = len(chars)
-    out: list[str] = []
-    for v in data:
-        idx = int(round((v - lo) / span * (n_bars - 1)))
-        idx = max(0, min(n_bars - 1, idx))
-        out.append(chars[idx])
-    return "".join(out)
+    return _glyph_ramp(data, chars)
 
 
 def _downsample(data: list[float], width: int) -> list[float]:

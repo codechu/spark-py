@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-05-20
+
+### Changed
+- Internal refactor: extracted shared `_glyph_ramp` helper used by
+  `sparkline` and `heatmap` (private API, no behavior change).
+
 ## [0.1.0] — 2026-05-20
 
 ### Added
