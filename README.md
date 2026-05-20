@@ -65,6 +65,15 @@ heatmap([0, 5, 10], chars=".oO")
 A denser-than-sparkline row. Useful for per-bucket load,
 hour-of-day utilization, or any single-row intensity readout.
 
+## Documentation
+
+- [API reference](docs/API.md) — every public symbol with signatures,
+  examples, and edge-case tables.
+- [Recipes](docs/RECIPES.md) — sparkline windows, top-N bars, 1-D
+  heatmaps, custom ramps, terminal-width downsampling.
+- [Migration guide](docs/MIGRATION.md) — 0.1 → 0.2 (internal refactor,
+  no API changes).
+
 ## Design
 
 - **Pure stdlib.** Zero third-party dependencies.
