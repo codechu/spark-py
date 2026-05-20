@@ -1,13 +1,12 @@
-# codechu-spark
-
 ```text
-   ___          _           _
-  / __\___   __| | ___  ___| |__  _   _
- / /  / _ \ / _\` |/ _ \/ __| '_ \| | | |
-/ /__| (_) | (_| |  __/ (__| | | | |_| |
-\____/\___/ \__,_|\___|\___|_| |_|\__,_|
+   c o d e c h u  ·  s p a r k
+   ▁▂▃▄▅▆▇█▇▆▅▄▃▂▁▂▄▆█▆▄▂▁▃▅▇█▇▅▃▁▂▅█▅▂▁▄▇▄▁▂▆█▆▂▁▃▇▇▃▁
+   ── one line. one glance. one truth about your data. ──
 ```
 
+> *Unicode sparklines, mini bar charts, and 1-D heatmaps — pure text.*
+
+# codechu-spark
 
 Stdlib-only text visualizations — Unicode sparklines, labeled mini
 bar charts, 1D heatmaps — extracted from the [Disk Cleaner](https://github.com/codechu/disk-cleaner)
