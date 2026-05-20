@@ -1,5 +1,14 @@
 # codechu-spark
 
+```text
+   ___          _           _
+  / __\___   __| | ___  ___| |__  _   _
+ / /  / _ \ / _\` |/ _ \/ __| '_ \| | | |
+/ /__| (_) | (_| |  __/ (__| | | | |_| |
+\____/\___/ \__,_|\___|\___|_| |_|\__,_|
+```
+
+
 Stdlib-only text visualizations — Unicode sparklines, labeled mini
 bar charts, 1D heatmaps — extracted from the [Disk Cleaner](https://github.com/codechu/disk-cleaner)
 toolchain. No external dependencies. Python 3.10+.
