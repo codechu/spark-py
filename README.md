@@ -1,7 +1,15 @@
 ```text
-   c o d e c h u  ·  s p a r k
-   ▁▂▃▄▅▆▇█▇▆▅▄▃▂▁▂▄▆█▆▄▂▁▃▅▇█▇▅▃▁▂▅█▅▂▁▄▇▄▁▂▆█▆▂▁▃▇▇▃▁
-   ── one line. one glance. one truth about your data. ──
+━━━━━━━━━━━━ c o d e c h u  ·  s p a r k ━━━━━━━━━━━━
+
+   load:    ▁▃▄▆█▇▅▃▂▁                            sparkline
+   disk:    ████▆▆▅▅▄▃▂▁                          (downsamples)
+   io:      ░░▒▒▓▓██▓▓▒░                          heatmap
+
+   python   ████████████████████  42              bar_chart
+   rust     ████████              17
+   go       ███                    8
+
+━━━━━━━━━━ one line. one glance. one truth. ━━━━━━━━━
 ```
 
 [![PyPI](https://img.shields.io/pypi/v/codechu-spark.svg)](https://pypi.org/project/codechu-spark/)
@@ -17,16 +25,6 @@ Stdlib-only text visualizations: single-row charts that fit a log
 line, a status field, or a dashboard cell. No GUI, no external
 deps — just Unicode block elements arranged for one-glance
 readability.
-
-```text
-load:  ▁▃▄▆█▇▅▃▂▁                            sparkline
-disk:  ████▆▆▅▅▄▃▂▁                          (auto-downsamples)
-io:    ░░▒▒▓▓██▓▓▒░                          heatmap
-
-python  ████████████████████  42             bar_chart
-rust    ████████              17
-go      ███                    8
-```
 
 ## Install
 
