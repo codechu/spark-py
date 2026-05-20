@@ -1,20 +1,29 @@
 # codechu-spark — API reference
 
-Reference for every public symbol in `codechu_spark` 0.2.0.
+Reference for every public symbol in `codechu_spark` 0.3.0.
 
-The package re-exports three rendering functions and a version
+The package re-exports five rendering functions and a version
 constant:
 
 ```python
-from codechu_spark import sparkline, bar_chart, heatmap, __version__
+from codechu_spark import (
+    sparkline,
+    multi_sparkline,
+    sparkline_with_axis,
+    bar_chart,
+    heatmap,
+    __version__,
+)
 ```
 
-| Symbol         | Kind     | Returns | Summary                                  |
-| -------------- | -------- | ------- | ---------------------------------------- |
-| `sparkline`    | function | `str`   | One-row Unicode sparkline                |
-| `bar_chart`    | function | `str`   | Multi-line labeled horizontal bar chart  |
-| `heatmap`      | function | `str`   | One-row 1-D intensity heatmap            |
-| `__version__`  | constant | `str`   | Package version (`"0.2.0"`)              |
+| Symbol                 | Kind     | Returns | Summary                                  |
+| ---------------------- | -------- | ------- | ---------------------------------------- |
+| `sparkline`            | function | `str`   | One-row Unicode sparkline (optional ANSI threshold coloring) |
+| `multi_sparkline`      | function | `str`   | Multiple series on adjacent lines        |
+| `sparkline_with_axis`  | function | `str`   | Sparkline with min/max axis labels       |
+| `bar_chart`            | function | `str`   | Multi-line labeled horizontal bar chart  |
+| `heatmap`              | function | `str`   | One-row 1-D intensity heatmap            |
+| `__version__`          | constant | `str`   | Package version (`"0.3.0"`)              |
 
 All rendering functions are pure: no I/O, no globals, no terminal
 control codes — they return strings you print yourself.
@@ -29,11 +38,19 @@ sparkline(
     *,
     width: int | None = None,
     chars: str = "▁▂▃▄▅▆▇█",
+    thresholds: list[float] | tuple[float, float] | None = None,
+    colors: tuple[str, str, str] | None = None,
 ) -> str
 ```
 
 Render `values` as a single-row Unicode sparkline. Values are
-min/max linearly scaled across the glyph ramp.
+min/max linearly scaled across the glyph ramp. With
+`thresholds=[low, high]` + `colors=(low_ansi, mid_ansi, high_ansi)`
+each glyph is wrapped in the matching ANSI escape based on its
+post-downsample value (`v < low`, `low <= v < high`, `v >= high`).
+Callers supply the raw ANSI codes — no palette is shipped, and the
+caller decides whether the output stream supports color
+(explicit-config principle).
 
 ### Parameters
 
@@ -42,15 +59,22 @@ min/max linearly scaled across the glyph ramp.
 | `values` | `list[float]`       | —             | Series to render. Any iterable of numbers; `int` and `float` both accepted.                          |
 | `width`  | `int \| None`       | `None`        | Target output width. `None` → one glyph per value. If `width < len(values)`, the series is downsampled by averaging consecutive buckets. `width >= len(values)` is treated as no-op (no upsampling, no padding). |
 | `chars`  | `str`               | `"▁▂▃▄▅▆▇█"`  | Glyph ramp ordered low → high. Any length ≥ 1.                                                       |
+| `thresholds` | `list[float] \| None` | `None`    | `[low, high]` — value cutoffs between low/mid/high color bands. Must be paired with `colors`.        |
+| `colors` | `tuple[str, str, str] \| None` | `None` | ANSI codes for the three bands, e.g. `("\x1b[32m", "\x1b[33m", "\x1b[31m")`. Must be paired with `thresholds`. |
 
 ### Returns
 
 `str` — exactly `min(len(values), width)` glyphs from `chars`
-(or `""` if `values` is empty).
+(or `""` if `values` is empty). When coloring is enabled the
+returned string contains ANSI escape sequences and `\x1b[0m`
+resets around each glyph; the *visible* width is unchanged.
 
 ### Raises
 
 - `ValueError` — if `chars` is empty.
+- `ValueError` — if exactly one of `thresholds`/`colors` is given.
+- `ValueError` — if `thresholds` is not length 2 or `colors` not
+  length 3.
 - `ValueError` — if `values` contains `NaN` (raised from the
   internal scaling step; not caught explicitly).
 
@@ -65,6 +89,15 @@ min/max linearly scaled across the glyph ramp.
 
 >>> sparkline([1, 2, 3], chars=".-=#")
 '.-#'
+
+>>> # CPU history with green / yellow / red thresholds
+>>> green, yellow, red = "\x1b[32m", "\x1b[33m", "\x1b[31m"
+>>> sparkline(
+...     [10, 45, 80],
+...     thresholds=[30, 70],
+...     colors=(green, yellow, red),
+... )
+'\x1b[32m▁\x1b[0m\x1b[33m▄\x1b[0m\x1b[31m█\x1b[0m'
 ```
 
 ### Edge cases
@@ -77,6 +110,97 @@ min/max linearly scaled across the glyph ramp.
 | `[1.0, float('nan'), 3.0]`           | _raises_   | `ValueError: cannot convert float NaN to integer`. |
 | `sparkline([1,2,3], width=10)`       | `'▁▄█'`    | `width > len(values)`: no upsampling.              |
 | `sparkline([1,2,3,4], chars="")`     | _raises_   | `ValueError: chars must be non-empty`.             |
+
+---
+
+## `multi_sparkline`
+
+```python
+multi_sparkline(
+    series_list: list[list[float]],
+    labels: list[str] | None = None,
+    *,
+    share_scale: bool = True,
+    width: int | None = None,
+    chars: str = "▁▂▃▄▅▆▇█",
+) -> str
+```
+
+Render multiple series as adjacent sparkline rows, joined by `"\n"`.
+
+### Parameters
+
+| Name          | Type                       | Default       | Description                                                                                  |
+| ------------- | -------------------------- | ------------- | -------------------------------------------------------------------------------------------- |
+| `series_list` | `list[list[float]]`        | —             | One series per row, rendered in order.                                                       |
+| `labels`      | `list[str] \| None`        | `None`        | Optional row labels. Must match `series_list` length. Padded to the longest label.           |
+| `share_scale` | `bool`                     | `True`        | If `True`, all rows share one min/max (heights comparable). If `False`, each row scales independently. |
+| `width`       | `int \| None`              | `None`        | Same semantics as `sparkline.width`; applied per row.                                        |
+| `chars`       | `str`                      | `"▁▂▃▄▅▆▇█"`  | Glyph ramp ordered low → high.                                                               |
+
+### Returns
+
+`str` — rows joined by `"\n"`. Empty `series_list` → `""`. Empty
+rows become empty lines (or label-only when labels supplied).
+
+### Raises
+
+- `ValueError` — if `labels` length does not match `series_list`.
+- `ValueError` — if `chars` is empty.
+
+### Example
+
+```python
+>>> print(multi_sparkline(
+...     [[0, 1, 2, 3], [0, 5, 10, 15]],
+...     labels=["small", "large"],
+...     share_scale=True,
+... ))
+small  ▁▁▂▂
+large  ▁▃▆█
+```
+
+With `share_scale=False`, both rows would end on `█`.
+
+---
+
+## `sparkline_with_axis`
+
+```python
+sparkline_with_axis(
+    values: list[float],
+    *,
+    width: int | None = None,
+    chars: str = "▁▂▃▄▅▆▇█",
+) -> str
+```
+
+Render a sparkline with the min/max of the *original* series as
+text labels on either side.
+
+### Parameters
+
+| Name     | Type           | Default       | Description                              |
+| -------- | -------------- | ------------- | ---------------------------------------- |
+| `values` | `list[float]`  | —             | Series to render.                        |
+| `width`  | `int \| None`  | `None`        | Forwarded to the inner `sparkline`.      |
+| `chars`  | `str`          | `"▁▂▃▄▅▆▇█"`  | Glyph ramp ordered low → high.           |
+
+### Returns
+
+`str` — `"<min> →<sparkline>← <max>"`. Integer-valued numbers
+render without a decimal; other floats render with one decimal.
+Empty input → `""`.
+
+### Example
+
+```python
+>>> sparkline_with_axis([1, 2, 3, 4, 10])
+'1 →▁▂▃▃█← 10'
+
+>>> sparkline_with_axis(list(range(100)), width=10)
+'0 →▁▂▃▃▄▅▆▆▇█← 99'
+```
 
 ---
 
@@ -200,7 +324,7 @@ suited to intensity readouts.
 ```python
 >>> from codechu_spark import __version__
 >>> __version__
-'0.2.0'
+'0.3.0'
 ```
 
 String constant; tracks the package release.

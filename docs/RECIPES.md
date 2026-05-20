@@ -156,3 +156,96 @@ Notes:
 - Averaging smooths outliers. If you want peaks preserved, downsample
   yourself (e.g. take `max` per bucket) and pass the result with
   `width=None`.
+
+---
+
+## 6. CPU usage with red/yellow/green threshold coloring
+
+`sparkline` takes optional `thresholds=[low, high]` plus a 3-tuple
+of ANSI color codes. The caller supplies the raw escapes — the
+package ships no palette and makes no assumption about whether your
+output stream supports color.
+
+```python
+import sys
+from codechu_spark import sparkline
+
+GREEN  = "\x1b[32m"
+YELLOW = "\x1b[33m"
+RED    = "\x1b[31m"
+
+cpu_samples = [12, 18, 24, 31, 45, 58, 67, 74, 82, 91, 88, 73, 61, 48, 35]
+
+# Only colorize when writing to a TTY (explicit-config principle).
+if sys.stdout.isatty():
+    line = sparkline(
+        cpu_samples,
+        thresholds=[30, 70],
+        colors=(GREEN, YELLOW, RED),
+    )
+else:
+    line = sparkline(cpu_samples)
+
+print(f"cpu  {line}")
+```
+
+Values under 30 render green, 30–70 yellow, and ≥ 70 red. The
+visible glyph count is unchanged — only ANSI wrappers are added.
+
+---
+
+## 7. Compare two metrics side-by-side
+
+`multi_sparkline` lines up multiple series. By default
+(`share_scale=True`) all rows share one min/max, so a flat row stays
+visibly flat next to a spiky one. Switch to
+`share_scale=False` when you care about each series' own shape.
+
+```python
+from codechu_spark import multi_sparkline
+
+cpu = [12, 18, 24, 31, 45, 58, 67, 74, 82, 91]
+mem = [40, 41, 42, 42, 43, 43, 44, 44, 45, 45]
+
+print(multi_sparkline(
+    [cpu, mem],
+    labels=["cpu", "mem"],
+    share_scale=True,
+))
+```
+
+Output (heights comparable — `mem` correctly looks nearly flat next
+to `cpu`'s climb):
+
+```
+cpu  ▁▂▂▃▄▅▆▆▇█
+mem  ▃▄▄▄▄▄▄▄▄▄
+```
+
+Flip `share_scale=False` and `mem` would also climb to `█` — useful
+when you want shape, not magnitude.
+
+---
+
+## 8. Add axis labels to a sparkline for dashboards
+
+`sparkline_with_axis` prefixes the min and suffixes the max so a
+single line is self-describing — handy in status dashboards where
+you can't afford a second row for tick marks.
+
+```python
+from codechu_spark import sparkline_with_axis
+
+latencies_ms = [12, 14, 11, 18, 22, 35, 47, 31, 20, 15, 13]
+print(f"p50 latency  {sparkline_with_axis(latencies_ms, width=20)}")
+```
+
+Output:
+
+```
+p50 latency  11 →▁▂▁▂▃▆█▅▃▂▁← 47
+```
+
+The numeric labels reflect the *original* extremes (before any
+downsample averaging), so a reader can map any glyph height back to
+real units.
